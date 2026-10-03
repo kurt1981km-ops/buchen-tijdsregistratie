@@ -387,51 +387,37 @@ $("share").onclick=async()=>{
   const subjectDate=docDate?docDate.split("-").reverse().join("-"):"";
   const subject=`Tijdsregistratie${subjectDate?" "+subjectDate:""}`;
   const company=$("company").value||"";
-  const email=($("email").value||"").trim();
   const name=`Tijdsregistratie_${(company||"Klant").replace(/[^\w-]/g,"_")}_${docDate||"document"}.pdf`;
   const file=new File([blob],name,{type:"application/pdf"});
-  const body=`Beste,\n\nIn bijlage vindt u de tijdsregistratie van ${subjectDate||"het document"}.\n\nMet vriendelijke groet,\nBUCHEN`;
 
-  // Chrome and other browsers with working file sharing: send the exact PDF
-  // as a real attachment through the Android share sheet.
-  const isSamsung=/SamsungBrowser/i.test(navigator.userAgent);
-  if(!isSamsung && navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+  // Chrome: hand the validated PDF directly to Android's share sheet.
+  // Gmail receives the PDF as a real attachment.
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
     await navigator.share({
       files:[file],
       title:subject,
-      text:body
+      text:`${subject}\n\nBeste,\n\nIn bijlage vindt u de tijdsregistratie van ${subjectDate||"het document"}.\n\nMet vriendelijke groet,\nBUCHEN`
     });
     return;
   }
 
-  // Samsung Internet: save the exact PDF bytes first, then open the mail
-  // composer with recipient/subject/body prefilled. The saved PDF must be
-  // attached manually in Gmail because Samsung Internet does not reliably
-  // pass locally generated PDF files as mail attachments.
+  // Fallback when file sharing is not supported.
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;
   a.download=name;
-  a.rel="noopener";
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),10000);
-
-  if(isSamsung){
-    const mailto=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setTimeout(()=>{ window.location.href=mailto; },700);
-    alert(`De PDF is opgeslagen in Downloads. Gmail wordt geopend met de ontvanger en e-mailtekst ingevuld. Voeg daarna ${name} toe als bijlage.`);
-    return;
-  }
-
-  alert("De PDF is opgeslagen. Voeg het bestand vanuit Downloads als bijlage toe in je e-mailapp.");
+  alert("Dit toestel ondersteunt het rechtstreeks delen van PDF-bestanden niet. De PDF is opgeslagen.");
  }catch(e){
   console.error("BUCHEN PDF/delen fout:",e);
   if(e.name!=="AbortError")
     alert("Delen mislukt. De registratie is niet verloren gegaan.\n\nFout: "+e.message);
  }
 };
+
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body></html>
