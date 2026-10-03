@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#c90000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<title>BUCHEN Tijdsregistratie</title>
+<style>
+:root{--red:#c90000;--dark:#252525;--bg:#f3f3f3;--line:#d8d8d8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--dark)}
+header{background:#fff;color:var(--dark);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid var(--red);box-shadow:0 2px 8px #00000014;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:150px;height:48px;display:block;background:url("buchen-logo.webp") center center / 150px 150px no-repeat;flex:0 0 auto}
+.logo span{display:none}
+.appTitle{font-size:16px;font-weight:800;color:#333;letter-spacing:.4px}
+main{max-width:1000px;margin:auto;padding:18px}
+.card{background:#fff;border-radius:14px;padding:20px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
+h1{font-size:25px;margin:0}.section{font-size:18px;font-weight:800;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--red)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+label{font-size:13px;font-weight:700}
+input,textarea,select{width:100%;margin-top:5px;border:1px solid #c9c9c9;border-radius:9px;padding:13px;font-size:17px;background:#fff}
+textarea{min-height:95px}
+.full{grid-column:1/-1}
+.person,.materialRow,.waitingRow{border:1px solid var(--line);border-radius:11px;padding:13px;margin-bottom:10px;background:#fafafa}
+.personhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:800}
+.btn{border:0;border-radius:9px;padding:14px 16px;font-size:16px;font-weight:800;cursor:pointer}
+.red{background:var(--red);color:#fff}.gray{background:#e9e9e9}.danger{background:#f4dede;color:#9b0000}
+.total{background:#fcecec;border-left:5px solid var(--red);padding:13px;font-size:18px;font-weight:800}
+canvas{width:100%;height:190px;border:2px solid #777;border-radius:10px;touch-action:none;background:#fff}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.note{font-size:12px;color:#666;margin-top:6px}
+#status{display:none;padding:12px;background:#fff3cd;border-radius:9px;margin-bottom:15px}
+@media(max-width:650px){.grid,.actions{grid-template-columns:1fr}.full{grid-column:auto}main{padding:9px}.card{padding:15px}header{padding:10px 12px}.logo{width:120px;height:40px;background-size:120px 120px}.appTitle{font-size:13px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo" aria-label="BUCHEN"></div>
+  </div>
+  <div class="appTitle">TIJDSREGISTRATIE</div>
+</header>
+<main>
+<div id="status"></div>
+
+<div class="card">
+  <h1>Tijdsregistratie</h1>
+  <p class="note">Digitale werkbon voor klantgoedkeuring</p>
+</div>
+
+<div class="card">
+  <div class="section">Klant & werf</div>
+  <div class="grid">
+    <div><label>Klant / bedrijf</label><input id="company"></div>
+    <div><label>Werf / site</label><input id="site"></div>
+    <div><label>Contactpersoon</label><input id="contact" placeholder="Naam contactpersoon"></div>
+    <div><label>E-mailadres klant</label><input id="email" type="email"></div>
+    <div><label>Datum</label><input id="date" type="date"></div>
+    <div><label>Werkbonnummer</label><input id="jobno" placeholder="Bijv. 2026-00125"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section">Werkzaamheden</div>
+  <textarea id="work" placeholder="Omschrijving van de uitgevoerde werkzaamheden..."></textarea>
+</div>
+
+<div class="card">
+  <div class="section">Medewerkers</div>
+  <div id="persons"></div>
+  <button class="btn gray" id="addPerson">＋ Medewerker toevoegen</button>
+  <div class="total" style="margin-top:12px">Totaal: <span id="grand">0u 00min</span></div>
+</div>
+
+<div class="card">
+  <div class="section">Extra info</div>
+  <textarea id="extra" placeholder="Aanvullende informatie, opmerkingen of bijzonderheden..."></textarea>
+</div>
+
+<div class="card">
+  <div class="section">Materialen</div>
+  <div id="materials"></div>
+  <button class="btn gray" id="addMaterial" type="button">＋ Materiaal toevoegen</button>
+</div>
+
+<div class="card">
+  <div class="section">Wachturen</div>
+  <div id="waiting"></div>
+  <button class="btn gray" id="addWaiting" type="button">＋ Wachturen toevoegen</button>
+  <div class="total" style="margin-top:12px">Totaal wachturen: <span id="waitTotal">0u 00min</span></div>
+</div>
+
+<div class="card">
+  <div class="section">Handtekening klant</div>
+  <canvas id="sig"></canvas>
+  <div style="margin-top:10px"><button class="btn gray" id="clearSig">Handtekening wissen</button></div>
+</div>
+
+<div class="card">
+  <div class="actions">
+    <button class="btn gray" id="newForm">Nieuwe registratie</button>
+    <button class="btn red" id="share">PDF + e-mail</button>
+  </div>
+  <p class="note">De gegevens worden lokaal op deze tablet bewaard. Bij “PDF + e-mail” wordt de PDF gedeeld via Gmail, Outlook of een andere beschikbare app.</p>
+</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const today=new Date().toISOString().slice(0,10);
+$("date").value=today;
+let personId=0;
+
+function fmt(m){return Math.floor(m/60)+"u "+String(m%60).padStart(2,"0")+"min"}
+function mins(s,e,p){
+ if(!s||!e)return 0;
+ let a=s.split(":").map(Number),b=e.split(":").map(Number);
+ let n=b[0]*60+b[1]-a[0]*60-a[1]-Number(p||0); if(n<0)n+=1440; return Math.max(0,n);
+}
+function recalc(){
+ let total=0;
+ document.querySelectorAll("#persons .person").forEach(x=>{
+   const m=mins(x.querySelector(".ps").value,x.querySelector(".pe").value,x.querySelector(".pp").value);
+   x.querySelector(".pt").textContent=fmt(m); total+=m;
+ });
+ $("grand").textContent=fmt(total);
+}
+function addPerson(data={}){
+ // Bij het toevoegen van een nieuwe medewerker nemen we de tijden
+ // van de eerste medewerker over. De naam blijft uiteraard leeg.
+ if(!Object.keys(data).length && document.querySelector("#persons .person")){
+   const first=document.querySelector("#persons .person");
+   data={
+     name:"",
+     start:first.querySelector(".ps")?.value || "08:00",
+     end:first.querySelector(".pe")?.value || "17:00",
+     pause:first.querySelector(".pp")?.value ?? 30
+   };
+ }
+ personId++;
+ const d=document.createElement("div"); d.className="person";
+ d.innerHTML=`<div class="personhead"><span>Medewerker ${personId}</span><button class="btn danger remove" type="button">Verwijderen</button></div>
+ <div class="grid">
+ <div><label>Naam</label><input class="pn" value="${data.name||""}" placeholder="Naam medewerker"></div>
+ <div><label>Start</label><input class="ps" type="time" value="${data.start||"08:00"}"></div>
+ <div><label>Einde</label><input class="pe" type="time" value="${data.end||"17:00"}"></div>
+ <div><label>Pauze (min.)</label><input class="pp" type="number" min="0" value="${data.pause??30}"></div>
+ <div class="full"><div class="total">Uren: <span class="pt">8u 30min</span></div></div>
+ </div>`;
+ $("persons").appendChild(d);
+ d.querySelector(".remove").onclick=()=>{d.remove();recalc()};
+ d.querySelectorAll("input").forEach(x=>x.oninput=recalc);
+ recalc();
+}
+$("addPerson").onclick=()=>addPerson();
+addPerson();
+
+function save(){
+ ["company","site","contact","email","jobno"].forEach(id=>localStorage.setItem("buchen_"+id,$(id).value));
+}
+["company","site","contact","email","jobno"].forEach(id=>{const v=localStorage.getItem("buchen_"+id);if(v)$(id).value=v});
+
+$("newForm").onclick=()=>{
+ if(!confirm("Nieuwe registratie starten? De huidige invoer wordt gewist."))return;
+ ["company","site","contact","email","jobno","work","extra"].forEach(id=>$(id).value="");
+ $("date").value=today; $("persons").innerHTML="";personId=0;addPerson();$("materials").innerHTML="";materialId=0;addMaterial();$("waiting").innerHTML="";waitingId=0;addWaiting();clearSig();
+};
+
+let materialId=0, waitingId=0;
+function addMaterial(data={}){
+ materialId++;
+ const d=document.createElement("div"); d.className="materialRow";
+ d.innerHTML=`<div class="grid">
+ <div><label>Soort</label><input class="mn" value="${data.name||""}" placeholder="Omschrijving materiaal"></div>
+ <div><label>Aantal / hoeveelheid</label><input class="mq" value="${data.qty||""}" placeholder="Bijv. 4 stuks"></div>
+ <div class="full"><button class="btn danger mremove" type="button">Verwijderen</button></div>
+ </div>`;
+ $("materials").appendChild(d);
+ d.querySelector(".mremove").onclick=()=>d.remove();
+}
+function addWaiting(data={}){
+ waitingId++;
+ const d=document.createElement("div"); d.className="waitingRow";
+ d.innerHTML=`<div class="grid">
+ <div><label>Start wachtuur</label><input class="ws" type="time" value="${data.start||"08:00"}"></div>
+ <div><label>Einde wachtuur</label><input class="we" type="time" value="${data.end||"09:00"}"></div>
+ <div><label>Reden</label><input class="wr full" value="${data.reason||""}" placeholder="Reden van wachten"></div>
+ <div class="full"><div class="total">Wachttijd: <span class="wt">1u 00min</span></div></div>
+ <div class="full"><button class="btn danger wremove" type="button">Verwijderen</button></div>
+ </div>`;
+ $("waiting").appendChild(d);
+ d.querySelector(".wremove").onclick=()=>{d.remove();calcWaiting()};
+ d.querySelectorAll("input").forEach(x=>x.oninput=calcWaiting);
+ calcWaiting();
+}
+function calcWaiting(){
+ let total=0;
+ document.querySelectorAll("#waiting .waitingRow").forEach(r=>{
+   const m=mins(r.querySelector(".ws").value,r.querySelector(".we").value,0);
+   r.querySelector(".wt").textContent=fmt(m); total+=m;
+ });
+ $("waitTotal").textContent=fmt(total);
+}
+$("addMaterial").onclick=()=>addMaterial();
+$("addWaiting").onclick=()=>addWaiting();
+addMaterial();
+addWaiting();
+
+const c=$("sig"),ctx=c.getContext("2d");
+function fit(){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;ctx.setTransform(d,0,0,d,0,0);ctx.fillStyle="#ffffff";ctx.fillRect(0,0,r.width,r.height);ctx.strokeStyle="#111111";ctx.lineWidth=2.5;ctx.lineCap="round"}
+fit();addEventListener("resize",fit);
+let draw=false;
+c.onpointerdown=e=>{draw=true;const r=c.getBoundingClientRect();ctx.beginPath();ctx.moveTo(e.clientX-r.left,e.clientY-r.top)};
+c.onpointermove=e=>{if(!draw)return;const r=c.getBoundingClientRect();ctx.lineTo(e.clientX-r.left,e.clientY-r.top);ctx.stroke()};
+c.onpointerup=c.onpointercancel=()=>draw=false;
+function clearSig(){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;ctx.save();ctx.setTransform(d,0,0,d,0,0);ctx.fillStyle="#ffffff";ctx.fillRect(0,0,r.width,r.height);ctx.restore();ctx.strokeStyle="#111111"}
+$("clearSig").onclick=clearSig;
+
+function esc(s){return String(s||"").replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)").replace(/\r?\n/g," ")}
+async function pdf(){
+ const logoImg=await new Promise((resolve,reject)=>{
+   const im=new Image();
+   im.onload=()=>resolve(im); im.onerror=reject; im.src="buchen-logo.webp";
+ });
+ const W=595.28,H=841.89,margin=42,contentW=W-2*margin,top=105,bottom=58;
+ const red=[0.78,0,0], dark=[0.13,0.13,0.13], gray=[0.42,0.42,0.42], light=[.965,.965,.965], pale=[1,.94,.94];
+ const col=c=>`${c[0]} ${c[1]} ${c[2]}`;
+ const pages=[]; let cmd=[], y=H-top;
+ const rect=(x,yy,w,h,c)=>cmd.push(`${col(c)} rg ${x} ${yy} ${w} ${h} re f`);
+ const line=(x1,y1,x2,y2,c=[.78,.78,.78],lw=.5)=>cmd.push(`${col(c)} RG ${lw} w ${x1} ${y1} m ${x2} ${y2} l S`);
+ const txt=(x,yy,size,s,bold=false,c=dark)=>cmd.push(`${col(c)} rg BT /${bold?"F2":"F1"} ${size} Tf 1 0 0 1 ${x.toFixed(1)} ${yy.toFixed(1)} Tm (${esc(s)}) Tj ET`);
+ const wrap=(s,max)=>{let out=[];String(s||"").split(/\r?\n/).forEach(line=>{let words=line.trim().split(/\s+/),cur="";if(!line.trim()){out.push("");return}words.forEach(w=>{if((cur+" "+w).trim().length>max){out.push(cur);cur=w}else cur=(cur+" "+w).trim()});if(cur)out.push(cur)});return out};
+ function header(){
+   rect(0,H-78,W,78,[1,1,1]);
+   // Exact BUCHEN logo asset supplied by the user; only its transparent margins are cropped for placement.
+   const lx=margin, ly=H-61, lw=112, lh=35;
+   cmd.push(`q ${lw} 0 0 ${lh} ${lx} ${ly} cm /Logo Do Q`);
+   txt(W-margin-150,H-39,15,"TIJDSREGISTRATIE",true,dark); txt(W-margin-150,H-56,7,"WERKUREN / WERKBON",false,gray);
+   rect(0,H-80,W,2,red);
+ }
+ function footer(){
+   line(margin,38,W-margin,38,[.82,.82,.82],.5);
+   txt(margin,25,6.5,"BUCHEN Industrial Services",true,gray);
+   txt(W-margin-190,25,6.5,`Tijdsregistratie - pagina ${pages.length+1}`,false,gray);
+ }
+ function newPage(){
+   if(cmd.length){footer();pages.push(cmd);}
+   cmd=[];header();y=H-top;
+ }
+ function need(h){if(y-h<bottom)newPage();}
+ function sectionTitle(t){need(28);txt(margin,y,12,t,true);y-=16;}
+ function box(h,c=[.985,.985,.985]){need(h);rect(margin,y-h,contentW,h,c);return y-h;}
+
+ header();
+ // Customer info
+ need(92); const infoH=68; rect(margin,y-infoH,contentW,infoH,light);
+ txt(margin+14,y-17,7,"KLANT",true,gray); txt(margin+14,y-31,10,$("company").value||"-",true);
+ txt(margin+14,y-48,7,"WERF / SITE",true,gray); txt(margin+14,y-61,9,$("site").value||"-");
+ txt(330,y-17,7,"WERKBONNUMMER",true,gray); txt(330,y-31,10,$("jobno").value||"-",true);
+ txt(330,y-48,7,"DATUM",true,gray); txt(330,y-61,9,$("date").value||"-"); y-=82;
+ txt(margin,y,7,"CONTACTPERSOON",true,gray); txt(margin+88,y,9,$("contact").value||"-",true); y-=25;
+
+ // Work description can span pages
+ sectionTitle("WERKZAAMHEDEN");
+ let workLines=wrap($("work").value||"Geen werkzaamheden ingevuld.",100);
+ let wi=0; while(wi<workLines.length){let n=Math.min(6,workLines.length-wi),h=n*13+22; if(y-h<bottom)newPage(),sectionTitle("WERKZAAMHEDEN (vervolg)"); h=Math.min(h,H-top-bottom);rect(margin,y-h,contentW,h,[.985,.985,.985]);let wy=y-17;for(let j=0;j<n;j++){txt(margin+12,wy,8.5,workLines[wi++]);wy-=13;}y-=h+18;}
+
+
+ // Employees
+ sectionTitle("MEDEWERKERS & UREN");
+ const x1=margin,x2=265,x3=345,x4=420,x5=W-margin;
+ function empHeader(){need(24);rect(x1,y-22,contentW,22,dark);[["MEDEWERKER",x1+8],["START",x2+8],["EINDE",x3+8],["PAUZE",x4+8],["UREN",x5-55]].forEach(a=>txt(a[1],y-14,7,a[0],true,[1,1,1]));y-=22;}
+ empHeader();
+ document.querySelectorAll("#persons .person").forEach((r,i)=>{
+   if(y-23<bottom){newPage();sectionTitle("MEDEWERKERS & UREN (vervolg)");empHeader();}
+   const h=23;if(i%2===0)rect(x1,y-h,contentW,h,light);
+   txt(x1+8,y-15,8,(r.querySelector(".pn").value||"Medewerker"));txt(x2+8,y-15,8,r.querySelector(".ps").value);txt(x3+8,y-15,8,r.querySelector(".pe").value);txt(x4+8,y-15,8,r.querySelector(".pp").value+" min");txt(x5-55,y-15,8,r.querySelector(".pt").textContent,true);line(x1,y-h,x5,y-h);y-=h;
+ });
+ need(28);rect(x1,y-27,contentW,27,pale);txt(x1+8,y-18,8,"TOTAAL GEWERKTE UREN",true);txt(x5-68,y-18,10,$("grand").textContent,true,red);y-=43;
+
+ // Materials
+ sectionTitle("MATERIALEN");
+ const mats=[...document.querySelectorAll("#materials .materialRow")];
+ if(!mats.length){
+   need(58);
+   rect(margin,y-58,contentW,58,[.985,.985,.985]);
+   txt(margin+12,y-18,7,"SOORT",true,gray);
+   txt(390,y-18,7,"AANTAL / HOEVEELHEID",true,gray);
+   txt(margin+12,y-40,8.5,"Geen materialen geregistreerd.",false,gray);
+   y-=76;
+ } else {
+   let mi=0;
+   while(mi<mats.length){
+     let count=Math.min(5,mats.length-mi);
+     let h=count*18+32;
+     if(y-h<bottom){newPage();sectionTitle("MATERIALEN (vervolg)");}
+     rect(margin,y-h,contentW,h,[.985,.985,.985]);
+
+     // Column headers
+     txt(margin+12,y-14,7,"SOORT",true,gray);
+     txt(390,y-14,7,"AANTAL / HOEVEELHEID",true,gray);
+     line(margin+10,y-20,W-margin-10,y-20,[.78,.78,.78],.5);
+
+     let my=y-34;
+     for(let j=0;j<count;j++){
+       let r=mats[mi++];
+       txt(margin+12,my,8.5,r.querySelector(".mn").value||"-");
+       txt(390,my,8.5,r.querySelector(".mq").value||"-");
+       my-=18;
+     }
+     y-=h+18;
+   }
+ }
+
+ // Waiting
+ sectionTitle("WACHTUREN");
+ const waits=[...document.querySelectorAll("#waiting .waitingRow")];
+ if(!waits.length){need(50);rect(margin,y-50,contentW,50,[.985,.985,.985]);txt(margin+12,y-18,8.5,"Geen wachturen geregistreerd.",false,gray);y-=68;}
+ else {
+   let wii=0;while(wii<waits.length){let count=Math.min(4,waits.length-wii),h=count*19+25;if(y-h<bottom){newPage();sectionTitle("WACHTUREN (vervolg)");}rect(margin,y-h,contentW,h,[.985,.985,.985]);let wy2=y-16;for(let j=0;j<count;j++){let r=waits[wii++],mm=mins(r.querySelector(".ws").value,r.querySelector(".we").value,0);txt(margin+12,wy2,8.5,`${r.querySelector(".ws").value} - ${r.querySelector(".we").value}   ${fmt(mm)}`);txt(220,wy2,8.5,(r.querySelector(".wr").value||"-").slice(0,55));wy2-=19;}y-=h+18;}
+ }
+
+ // Approval and signature: always keep together; if it doesn't fit, start a new page.
+ const approvalH=145;
+ if(y-approvalH<bottom)newPage();
+ sectionTitle("GOEDKEURING KLANT");
+ const blockTop=y; rect(margin,blockTop-approvalH,contentW,approvalH,[.985,.985,.985]);
+ txt(margin+12,blockTop-17,7,"HANDTEKENING KLANT",true,gray);txt(335,blockTop-17,7,"CONTACTPERSOON",true,gray);txt(335,blockTop-43,10,$("contact").value||"-",true,dark);
+ line(margin+12,blockTop-100,285,blockTop-100,[.55,.55,.55],.7);line(335,blockTop-100,W-margin-12,blockTop-100,[.55,.55,.55],.7);
+ txt(margin+12,blockTop-116,6.8,"Door ondertekening bevestigt de klant de hierboven vermelde uren.",false,gray);
+ y=blockTop-approvalH-18;
+
+ // Signature image placed in approval area
+ const jpg=c.toDataURL("image/jpeg",.82),jb64=jpg.split(",")[1],jbin=atob(jb64),jimg=new Uint8Array(jbin.length);for(let i=0;i<jbin.length;i++)jimg[i]=jbin.charCodeAt(i);
+ const sigX=margin+12,sigY=blockTop-88,sigW=220,sigH=55;
+ // replace the left signature area with image after content is assembled
+ footer();pages.push(cmd);
+
+ // PDF objects
+ const objs=[`<< /Type /Catalog /Pages 2 0 R >>`,`<< /Type /Pages /Kids [] /Count 0 >>`];
+ // page/font/image/content objects are generated below
+ const pageRefs=[]; const font1=objs.length+1;objs.push(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);const font2=objs.length+1;objs.push(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>`);
+ const imgObj=objs.length+1;objs.push(null);
+ const logoObj=objs.length+1;objs.push(null);
+ // Convert the unchanged supplied logo to a PDF-compatible JPEG at runtime.
+ const lc=document.createElement("canvas"); lc.width=2000; lc.height=625;
+ const lctx=lc.getContext("2d"); lctx.fillStyle="#ffffff"; lctx.fillRect(0,0,2000,625);
+ lctx.drawImage(logoImg,0,688,2000,625,0,0,2000,625);
+ const lj=lc.toDataURL("image/jpeg",0.98), lb64=lj.split(",")[1], lbin=atob(lb64), limg=new Uint8Array(lbin.length); for(let i=0;i<lbin.length;i++)limg[i]=lbin.charCodeAt(i);
+ const imgStream=`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jimg.length} >>`;
+ objs[imgObj-1]=imgStream;
+ const logoStream=`<< /Type /XObject /Subtype /Image /Width 2000 /Height 625 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${limg.length} >>`;
+ objs[logoObj-1]=logoStream;
+ const contentObjs=[];
+ pages.forEach((pc,idx)=>{
+   let content=pc.join("\n");
+   if(idx===pages.length-1)content+=`\nq ${sigW} 0 0 ${sigH} ${sigX} ${sigY} cm /Im1 Do Q`;
+   const b=new TextEncoder().encode(content);const oid=objs.length+1;objs.push(`<< /Length ${b.length} >>\nstream\n${content}\nendstream`);contentObjs.push(oid);
+   const poid=objs.length+1;objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${font1} 0 R /F2 ${font2} 0 R >> /XObject << /Im1 ${imgObj} 0 R /Logo ${logoObj} 0 R >> >> /Contents ${oid} 0 R >>`);pageRefs.push(poid);
+ });
+ objs[1]=`<< /Type /Pages /Kids [${pageRefs.map(x=>x+" 0 R").join(" ")}] /Count ${pageRefs.length} >>`;
+ let out=[new TextEncoder().encode("%PDF-1.4\n")],offs=[0],pos=out[0].length;
+ for(let i=0;i<objs.length;i++){
+   offs.push(pos);
+   const objNo=i+1;
+   if(i===imgObj-1 || i===logoObj-1){
+     const data=i===imgObj-1?jimg:limg;
+     const pre=new TextEncoder().encode(`${objNo} 0 obj\n${objs[i]}\nstream\n`);
+     const post=new TextEncoder().encode("\nendstream\nendobj\n");
+     out.push(pre,data,post); pos+=pre.length+data.length+post.length;
+   }else{
+     const z=new TextEncoder().encode(`${objNo} 0 obj\n${objs[i]}\nendobj\n`);
+     out.push(z); pos+=z.length;
+   }
+ }
+ let x=pos,xr=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;for(let i=1;i<=objs.length;i++)xr+=String(offs[i]).padStart(10,"0")+" 00000 n \n";xr+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;out.push(new TextEncoder().encode(xr));return new Blob(out,{type:"application/pdf"});
+}
+
+$("share").onclick=async()=>{
+ save();
+ try{
+  const blob=await pdf();
+  const docDate=$("date").value||"";
+  const subjectDate=docDate?docDate.split("-").reverse().join("-"):"";
+  const subject=`Tijdsregistratie${subjectDate?" "+subjectDate:""}`;
+  const company=$("company").value||"";
+  const name=`Tijdsregistratie_${(company||"Klant").replace(/[^\w-]/g,"_")}_${docDate||"document"}.pdf`;
+  const file=new File([blob],name,{type:"application/pdf"});
+
+  // Android/iOS Web Share: the PDF is handed to Gmail as a real attachment.
+  // The subject is passed in title/text; Gmail decides how to map those fields.
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+    await navigator.share({
+      files:[file],
+      title:subject,
+      text:`${subject}\n\nBeste,\n\nIn bijlage vindt u de tijdsregistratie van ${subjectDate||"het document"}.\n\nMet vriendelijke groet,\nBUCHEN`
+    });
+    return;
+  }
+
+  // Fallback for browsers without file sharing support.
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+  alert("Dit toestel ondersteunt het rechtstreeks delen van PDF-bestanden niet. De PDF is opgeslagen.");
+ }catch(e){
+  console.error("BUCHEN PDF/delen fout:",e);
+  if(e.name!=="AbortError")
+    alert("Delen mislukt. De registratie is niet verloren gegaan.\n\nFout: "+e.message);
+ }
+};
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body></html>
