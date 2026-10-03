@@ -382,7 +382,7 @@ async function pdf(){
 $("share").onclick=async()=>{
  save();
  try{
-  const blob=pdf();
+  const blob=await pdf();
   const docDate=$("date").value||"";
   const subjectDate=docDate?docDate.split("-").reverse().join("-"):"";
   const subject=`Tijdsregistratie${subjectDate?" "+subjectDate:""}`;
