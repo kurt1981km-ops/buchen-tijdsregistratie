@@ -1,0 +1,19 @@
+{
+  "name": "BUCHEN Tijdsregistratie",
+  "short_name": "BUCHEN",
+  "description": "BUCHEN Tijdsregistratie",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#c90000",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "buchen-logo.webp",
+      "sizes": "1024x1024",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}
