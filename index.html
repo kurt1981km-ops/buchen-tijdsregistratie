@@ -236,7 +236,7 @@ async function pdf(){
  function header(){
    rect(0,H-78,W,78,[1,1,1]);
    // Exact BUCHEN logo asset supplied by the user; only its transparent margins are cropped for placement.
-   const lx=margin, ly=H-61, lw=112, lh=35;
+   const lx=margin, ly=H-55, lw=112, lh=23.4;
    cmd.push(`q ${lw} 0 0 ${lh} ${lx} ${ly} cm /Logo Do Q`);
    txt(W-margin-150,H-39,15,"TIJDSREGISTRATIE",true,dark); txt(W-margin-150,H-56,7,"WERKUREN / WERKBON",false,gray);
    rect(0,H-80,W,2,red);
@@ -346,13 +346,13 @@ async function pdf(){
  const imgObj=objs.length+1;objs.push(null);
  const logoObj=objs.length+1;objs.push(null);
  // Convert the unchanged supplied logo to a PDF-compatible JPEG at runtime.
- const lc=document.createElement("canvas"); lc.width=2000; lc.height=625;
+ const lc=document.createElement("canvas"); lc.width=2000; lc.height=417;
  const lctx=lc.getContext("2d"); lctx.fillStyle="#ffffff"; lctx.fillRect(0,0,2000,625);
- lctx.drawImage(logoImg,0,688,2000,625,0,0,2000,625);
+ lctx.drawImage(logoImg,0,688,2000,417,0,0,2000,417);
  const lj=lc.toDataURL("image/jpeg",0.98), lb64=lj.split(",")[1], lbin=atob(lb64), limg=new Uint8Array(lbin.length); for(let i=0;i<lbin.length;i++)limg[i]=lbin.charCodeAt(i);
  const imgStream=`<< /Type /XObject /Subtype /Image /Width ${sigCanvas.width} /Height ${sigCanvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jimg.length} >>`;
  objs[imgObj-1]=imgStream;
- const logoStream=`<< /Type /XObject /Subtype /Image /Width 2000 /Height 625 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${limg.length} >>`;
+ const logoStream=`<< /Type /XObject /Subtype /Image /Width 2000 /Height 417 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${limg.length} >>`;
  objs[logoObj-1]=logoStream;
  const contentObjs=[];
  pages.forEach((pc,idx)=>{
