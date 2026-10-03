@@ -387,7 +387,8 @@ $("share").onclick=async()=>{
   const subjectDate=docDate?docDate.split("-").reverse().join("-"):"";
   const subject=`Tijdsregistratie${subjectDate?" "+subjectDate:""}`;
   const company=$("company").value||"";
-  const email=$("email").value||"";
+  const email=$("email").value.trim();
+  if(email && navigator.clipboard && navigator.clipboard.writeText){ try{ await navigator.clipboard.writeText(email); }catch(e){} }
   const name=`Tijdsregistratie_${(company||"Klant").replace(/[^\w-]/g,"_")}_${docDate||"document"}.pdf`;
   const file=new File([blob],name,{type:"application/pdf"});
 
@@ -399,7 +400,7 @@ $("share").onclick=async()=>{
     await navigator.share({
       files:[file],
       title:subject,
-      text:`Beste,\n\nIn bijlage vindt u de tijdsregistratie van ${subjectDate||"het document"}.\n\nMet vriendelijke groet,\nBUCHEN${email?`\n\nKlant e-mail: ${email}`:""}`
+      text:`Beste,\n\nIn bijlage vindt u de tijdsregistratie van ${subjectDate||"het document"}.\n\nMet vriendelijke groet,\nBUCHEN`
     });
     return;
   }
